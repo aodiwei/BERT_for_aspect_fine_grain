@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import collections
 import csv
+import logging
 import os
 import modeling
 import optimization
@@ -394,17 +395,17 @@ class SentimentAnalysisFineGrainProcessor(DataProcessor):
         examples = []
         for (i, line) in enumerate(lines):
             # Only the test set has a header
-            if set_type == "test" and i == 0:
-                continue
+            # if set_type == "test" and i == 0:
+            #     continue
             guid = "%s-%s" % (set_type, i)
-            # if set_type == "test":
-            #  text_a = tokenization.convert_to_unicode(line[1])
-            #  label = "0"
-            # else:
-            #  text_a = tokenization.convert_to_unicode(line[3])
-            #  label = tokenization.convert_to_unicode(line[1])
-            label = tokenization.convert_to_unicode(line[0])
-            text_a = tokenization.convert_to_unicode(line[1])
+            if set_type == "test":
+                 text_a = tokenization.convert_to_unicode(line[0])
+                 label = "0_-2,1_1,2_-2,3_-2,4_-2,5_-2,6_-2,7_0,8_-2,9_1,10_1,11_-2,12_0,13_-2,14_-1,15_0,16_1,17_-2,18_1,19_0"
+            else:
+             # text_a = tokenization.convert_to_unicode(line[3])
+             # label = tokenization.convert_to_unicode(line[1])
+                label = tokenization.convert_to_unicode(line[0])
+                text_a = tokenization.convert_to_unicode(line[1])
 
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
@@ -686,7 +687,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
     with tf.variable_scope("loss"):
         if is_training:
             # I.e., 0.1 dropout
-            output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+            output_layer = tf.nn.dropout(output_layer, keep_prob=0.6)
 
         labels = tf.cast(labels, tf.float32)
 
@@ -720,21 +721,6 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         probabilities = tf.concat(probabilities, 1, name='probabilities')
         logits = tf.concat(logs, 1, name='logits')
 
-        # probabilities = tf.convert_to_tensor(probabilities, name='probabilities')
-        # probabilities = tf.transpose(probabilities, perm=[1, 0, 2])
-        # dim = probabilities.shape[0].value
-        # if dim == None:
-        #     dim = -1
-        #
-        # # probabilities = tf.reshape(probabilities, (probabilities.shape[0].value, -1))
-        # probabilities = tf.reshape(probabilities, (dim -1))
-        # logits = tf.convert_to_tensor(logs, name='logits')
-        # logits = tf.transpose(logits, perm=[1, 0, 2])
-        # dim = logits.shape[0].value
-        # if dim == None:
-        #     dim = -1
-        # logits = tf.reshape(logits, (dim, -1))
-        # logits = tf.reshape(logits, (-1, -1))
         per_example_loss = losses
         loss = tf.reduce_mean(per_example_loss)
 
@@ -1097,6 +1083,13 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
 
 def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
+    log = logging.getLogger('tensorflow')
+    fh = logging.FileHandler('tf.log')
+    fh.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s %(levelname)-5s[%(filename)s:%(lineno)s-%(funcName)s]:%(message)s')
+    fh.setFormatter(fmt)
+    log.addHandler(fh)
+
 
     processors = {
         "cola": ColaProcessor,
